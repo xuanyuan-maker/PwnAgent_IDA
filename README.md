@@ -1,4 +1,4 @@
-# pwn-agent（V1 开发中）
+# pwn-agent
 
 > ⚠️ **重要声明：这是一个使用 AI 生成的工具，功能不全且不稳定。**
 >
@@ -82,6 +82,3 @@ bash scripts/test_ida_plugin.sh
   - `VIRTUAL_ENV`
   - `CONDA_PREFIX`
   - `CONDA_DEFAULT_ENV`
-
-## 代码文档
-详见：`代码说明书.md`
