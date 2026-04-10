@@ -1,0 +1,55 @@
+project:
+  name: pwn-agent
+  version: 0.1.0
+
+runtime:
+  workspace: ./
+  tasks_dir: ./tasks
+  reports_dir: ./reports
+  logs_dir: ./logs
+  log_level: INFO
+  timeout_sec: 3000
+  max_retries: 2
+  run_lock_file: ./tasks/.run.lock   # 全局串行锁：同一时刻只允许一个任务执行
+  snapshot_max_functions: 80
+  snapshot_max_strings: 80
+  snapshot_max_imports: 80
+  snapshot_max_dangerous_calls: 24
+  evidence_max_items: 12
+  evidence_max_list_items: 8
+  evidence_text_chars: 1200
+  round1_batch_size: 1
+  round1_max_batches: 24
+  round1_max_requests: 12
+  round2_max_suspects: 5
+
+model:
+  provider: ollama
+  name: qwen2.5-coder:14b
+  base_url: http://127.0.0.1:11434
+  temperature: 0.1
+  # 模型特定选项，键为模型名，值为覆盖的选项
+  specific_options:
+    gpt-oss:20b:
+      think: low  # 可选：low / false。降低或关闭 reasoning
+      temperature: 0.0  # 降低随机性，加快响应
+      num_predict: 2048  # 限制最大输出长度
+      top_k: 20  # 减少采样空间
+      top_p: 0.5  # 降低多样性
+
+analysis:
+  dangerous_functions:
+    - gets
+    - strcpy
+    - strcat
+    - sprintf
+    - scanf
+    - read
+    - recv
+    - system
+
+agents:
+  scout_model: qwen2.5-coder:7b
+  judge_model: deepseek-r1:14b
+  verifier_model: qwen2.5-coder:14b
+  verifier_on_high_risk: false

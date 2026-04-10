@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FinalReport",
+  "type": "object",
+  "required": [
+    "primary_suspicious_site",
+    "suspected_vulnerability_type",
+    "vulnerable_functions",
+    "root_cause",
+    "trigger_condition",
+    "key_evidence",
+    "impact",
+    "false_positive_risk",
+    "patch_idea",
+    "minimal_fix",
+    "manual_checks"
+  ],
+  "properties": {
+    "primary_suspicious_site": {"type": "string"},
+    "suspected_vulnerability_type": {"type": "string"},
+    "vulnerable_functions": {"type": "array", "items": {"type": "string"}},
+    "root_cause": {"type": "string"},
+    "trigger_condition": {"type": "string"},
+    "key_evidence": {"type": "array", "items": {"type": "string"}},
+    "impact": {"type": "string"},
+    "false_positive_risk": {"type": "string"},
+    "patch_idea": {"type": "string"},
+    "minimal_fix": {"type": "string"},
+    "manual_checks": {"type": "array", "items": {"type": "string"}},
+    "vulnerability_locations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["function", "address", "statement", "source"],
+        "properties": {
+          "function": {"type": "string"},
+          "address": {"type": "string"},
+          "statement": {"type": "string"},
+          "source": {"type": "string"}
+        }
+      }
+    },
+    "analysis_order": {"type": "array", "items": {"type": "string"}},
+    "function_summaries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "role", "suspicious", "reason"],
+        "properties": {
+          "name": {"type": "string"},
+          "role": {"type": "string"},
+          "suspicious": {"type": "string"},
+          "reason": {"type": "string"},
+          "rename_suggestion": {"type": "string"}
+        }
+      }
+    },
+    "semantic_renames": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["original_name", "suggested_name", "reason"],
+        "properties": {
+          "original_name": {"type": "string"},
+          "suggested_name": {"type": "string"},
+          "reason": {"type": "string"}
+        }
+      }
+    }
+  }
+}

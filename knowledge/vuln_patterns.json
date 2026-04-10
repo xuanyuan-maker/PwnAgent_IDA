@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "stack_overflow",
+      "name_cn": "栈溢出",
+      "aliases": ["stack overflow", "栈溢出", "栈缓冲区溢出"],
+      "trigger_signals": [
+        "局部栈数组接收用户输入",
+        "scanf/gets/read/recv 等输入长度大于目标栈缓冲区容量",
+        "snprintf/sprintf/memcpy/strcpy 等向栈对象写入时缺少边界检查"
+      ],
+      "key_observations": [
+        "必须同时确认写入目标位于栈帧中，并确认用户可控长度超过该对象真实大小",
+        "如果只看到危险 API 名称，但没有看到目标缓冲区大小或长度传播，不应仓促下结论"
+      ],
+      "triage_questions": [
+        "目标缓冲区是否为局部变量或栈数组",
+        "长度参数是否用户可控",
+        "格式串或长度上限是否与缓冲区大小一致"
+      ],
+      "false_positive_traps": [
+        "反编译器推导出的局部变量大小可能不准，需要结合栈布局复核",
+        "仅凭存在 scanf/read/memcpy 不能直接判定为栈溢出"
+      ]
+    },
+    {
+      "id": "format_string",
+      "name_cn": "格式化字符串漏洞",
+      "aliases": ["format string", "格式化字符串", "printf(user_input)"],
+      "trigger_signals": [
+        "printf/fprintf/syslog 等将用户可控字符串直接作为格式串",
+        "没有固定格式模板，用户输入中可出现 %n/%p/%s 等说明符"
+      ],
+      "key_observations": [
+        "核心不是输出函数本身，而是用户可控数据是否落在格式串位置",
+        "若调用形态为 printf(\"%s\", user_buf) 通常不是格式化字符串漏洞"
+      ],
+      "triage_questions": [
+        "用户输入是否直接作为第一个格式参数",
+        "是否存在可控的 %n、%p、%s 等格式说明符利用面"
+      ],
+      "false_positive_traps": [
+        "看到 printf/puts/fprintf 不等于存在格式化字符串漏洞",
+        "固定常量格式串配合用户参数通常只是普通输出"
+      ]
+    },
+    {
+      "id": "integer_overflow",
+      "name_cn": "整数溢出",
+      "aliases": ["integer overflow", "整数溢出", "signedness", "wraparound"],
+      "trigger_signals": [
+        "长度、索引、计数参与加减乘后用于分配、拷贝、循环或边界判断",
+        "有符号与无符号混用，或窄位宽类型向宽位宽传播前已截断"
+      ],
+      "key_observations": [
+        "关键是算术结果与后续内存操作、数组索引、循环条件之间的关系",
+        "如果没有证据表明溢出结果会改变控制流或内存边界，不能只因存在整数运算就下结论"
+      ],
+      "triage_questions": [
+        "用户可控整数是否参与大小计算或索引计算",
+        "溢出后是否进入 malloc/new/memcpy/read/循环边界等危险点",
+        "比较或校验发生在溢出之前还是之后"
+      ],
+      "false_positive_traps": [
+        "普通的 int/size_t 转换不一定构成漏洞",
+        "只看到大数比较或类型转换，不足以确认整数溢出可利用"
+      ]
+    },
+    {
+      "id": "heap_overflow",
+      "name_cn": "堆溢出",
+      "aliases": ["heap overflow", "堆溢出", "heap corruption"],
+      "trigger_signals": [
+        "malloc/calloc/new 后，写入长度大于实际分配长度",
+        "菜单堆题中记录的 chunk size 与 edit/fill/write 实际写入长度不一致",
+        "用户可控长度直接传入 memcpy/read/recv 等写入堆块"
+      ],
+      "key_observations": [
+        "需要同时确认分配大小、记录大小、实际写入大小三者关系",
+        "如果写入目标是堆块但长度被严格限制在已分配范围内，则不能仅凭 memcpy/read 判定堆溢出"
+      ],
+      "triage_questions": [
+        "堆块真实分配大小是多少",
+        "程序记录的长度字段是否可信且会被后续写入逻辑使用",
+        "危险写入点使用的长度是否可能超过 chunk 容量"
+      ],
+      "false_positive_traps": [
+        "只看到 malloc 与 memcpy 组合不代表一定越界",
+        "需要区分初始化写入、受限写入和真正的越界写入"
+      ]
+    },
+    {
+      "id": "uaf",
+      "name_cn": "释放后使用",
+      "aliases": ["use after free", "uaf", "释放后使用", "dangling pointer"],
+      "trigger_signals": [
+        "free/delete 后全局槽位、链表节点或对象指针未清空",
+        "view/show/print/edit/modify 等后续路径继续解引用同一指针",
+        "释放后仍可二次 free、读、写或作为虚函数/回调对象使用"
+      ],
+      "key_observations": [
+        "必须关注对象生命周期，而不是只盯危险 API 名称",
+        "如果 rm/free 路径释放对象后没有将槽位置 NULL，并且 view/modify 仍按有效对象访问，这是 UAF 高危信号",
+        "当程序支持重新分配同槽位或可控大小分配时，UAF 可能进一步演化为堆利用"
+      ],
+      "triage_questions": [
+        "free/delete 后指针或槽位是否被置空",
+        "后续哪些函数还会读取、打印、修改或再次释放该对象",
+        "是否存在同索引重新分配、复用或类型混淆路径"
+      ],
+      "false_positive_traps": [
+        "仅有 free 调用本身不构成 UAF",
+        "如果释放后立刻清空槽位且所有访问都先判空，则需要谨慎下结论"
+      ]
+    }
+  ]
+}
